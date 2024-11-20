@@ -3,31 +3,150 @@ import SwiftSyntax
 import SwiftSyntaxBuilder
 import SwiftSyntaxMacros
 
-/// Implementation of the `stringify` macro, which takes an expression
-/// of any type and produces a tuple containing the value of that expression
-/// and the source code that produced the value. For example
-///
-///     #stringify(x + y)
-///
-///  will expand to
-///
-///     (x + y, "x + y")
-public struct StringifyMacro: ExpressionMacro {
+public struct DiffableMacro: MemberMacro {
+
     public static func expansion(
-        of node: some FreestandingMacroExpansionSyntax,
+        of node: AttributeSyntax,
+        providingMembersOf declaration: some DeclGroupSyntax,
         in context: some MacroExpansionContext
-    ) -> ExprSyntax {
-        guard let argument = node.arguments.first?.expression else {
-            fatalError("compiler bug: the macro does not have any arguments")
+    ) throws -> [DeclSyntax] {
+
+        // Equatable
+        try declaration.inheritanceClause.checkConformEquatableProtocol()
+
+        // valid type
+        let isValidType = declaration.check(
+            validTypes: EnumDeclSyntax.self,
+            StructDeclSyntax.self,
+            ClassDeclSyntax.self
+        )
+        if !isValidType {
+            throw DiffableMacroError.shouldBeClassOrStructOrEnum
         }
 
-        return "(\(argument), \(literal: argument.description))"
+        let members = declaration.memberBlock.members
+        let validVarDecls = members
+            .compactMap({ $0.decl.as(VariableDeclSyntax.self) })
+            .removeComputedVariables() // remove computed
+            .removePrivateVariables() // remove private and valid private(set)
+        
+        let variableNames = validVarDecls
+            .flatMap(\.bindings)
+            .extractVariablesName()
+        
+        // modifier
+        let modifier = declaration.getModifierIfExists()
+        var optionSetDeclaration = String.generatePrefixOptionSetDeclaration(withModifier: modifier)
+        var diffFunctionDeclaration = String.generatePrefixDiffFunctionDeclaration()
+        
+        for item in variableNames.enumerated() {
+            let newOption = "static let \(item.element) = Difference(rawValue: 1 << \(item.offset))"
+            optionSetDeclaration += "\n\(newOption)"
+            
+            let ifStatement = """
+                            
+                            if currentCopy?.\(item.element) != otherCopy?.\(item.element) {
+                                difference.insert(.\(item.element))
+                            }
+                            
+                            """
+            diffFunctionDeclaration += ifStatement
+        }
+        
+        optionSetDeclaration += """
+        }
+        """
+        
+        diffFunctionDeclaration += """
+        
+            currentCopy = nil
+            otherCopy = nil
+            return difference
+        }
+        """
+
+        if let modifier {
+            optionSetDeclaration = modifier + " \(optionSetDeclaration)"
+            diffFunctionDeclaration = modifier + " \(diffFunctionDeclaration)"
+        }
+        
+        return [.init(stringLiteral: optionSetDeclaration),
+                .init(stringLiteral: diffFunctionDeclaration)]
+    }
+}
+
+private extension DeclGroupSyntax {
+    
+    func check(validTypes types: DeclSyntaxProtocol.Type...) -> Bool {
+        var isValidType = false
+        for type in types {
+            isValidType = isValidType || self.is(type.self)
+        }
+        
+        guard isValidType else {
+            return false
+        }
+        
+        return true
+    }
+    
+    func getModifierIfExists() -> String? {
+        return modifiers
+            .compactMap { $0.as(DeclModifierSyntax.self) }
+            .first?.name.text
+    }
+}
+
+private extension String {
+    
+    static func generatePrefixOptionSetDeclaration(withModifier modifier: String? = nil) -> Self {
+        let defineOptionSetString = "struct Difference: OptionSet {"
+        let rawValueString = "let rawValue: Int"
+        let initString = """
+            init(rawValue: Int) {
+                self.rawValue = rawValue
+            }
+            """
+        
+        var resultValue = defineOptionSetString
+        
+        if let modifier, modifier == "public" {
+            resultValue += """
+            \(modifier) \(rawValueString)
+            \(modifier) \(initString)
+            """
+        } else {
+            resultValue += """
+            \(rawValueString)
+            \(initString)
+            """
+        }
+        
+        return resultValue
+    }
+    
+    static func generatePrefixDiffFunctionDeclaration() -> Self {
+        """
+        func findDiffBy(otherConfiguration configuration: Self) -> Difference {
+            var difference: Difference = []
+            var currentCopy: Self? = self
+            var otherCopy: Self? = configuration
+        
+        """
+    }
+    
+}
+
+private extension [PatternBindingListSyntax.Element] {
+    
+    func extractVariablesName() -> [String] {
+        return compactMap { $0.pattern.as(IdentifierPatternSyntax.self)?.identifier.text }
     }
 }
 
 @main
 struct DiffablePlugin: CompilerPlugin {
     let providingMacros: [Macro.Type] = [
-        StringifyMacro.self,
+        DiffableMacro.self
     ]
 }
