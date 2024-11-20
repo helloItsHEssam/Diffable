@@ -1,21 +1,22 @@
-/// A macro that marks a class, struct, or actor for automatic setter generation by applying
-/// [@BuildableTracked](<doc:BuildableMacro/BuildableTracked(name:forceEscaping:)>) to properties.
+/// A macro that marks a class, struct or enum for automatic generation of diffable functionality.
 ///
-/// It scans for settable properties and applies [`@Buildable`](<doc:BuildableMacro/Buildable()>) to them, unless marked
-/// with [`@BuildableIgnored`](<doc:BuildableMacro/BuildableIgnored()>).
+/// The `@Diffable` macro is used to enable the identification of differences between two instances of the same type.
+/// It scans for properties within the type and generates the required functionality to compute their differences.
 ///
-/// Example:
+/// ### Example
 /// ```swift
-/// @Buildable
+/// @Diffable
 /// struct User {
-///     @BuildableIgnored
 ///     let id: UUID
 ///     var name: String
+///     var age: Int
 /// }
-/// // Automatically adds @BuildableTracked to 'name' but not to 'id'.
+///
+/// // Automatically generates functionality to compute differences, such as:
+/// // - Comparing two `User` instances
+/// // - Returning only the properties that have changed
 /// ```
 ///
-/// - Note: This macro is an entry point for the Buildable functionality.
 @attached(member, names: arbitrary)
 public macro Diffable() = #externalMacro(
     module: "DiffableMacros",
