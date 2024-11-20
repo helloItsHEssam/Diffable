@@ -14,10 +14,10 @@ public enum DiffableMacroError: CustomStringConvertible, Error {
     public var description: String {
         switch self {
         case .shouldBeClassOrStructOrEnum:
-            return "@DiffableMacro is only available in class, struct or enum"
+            return "@Diffable is only available in class, struct or enum"
             
         case .shouldConformToEquatableProtocol:
-            return "@DiffableMacro should Conform to `Equatable` protocol"
+            return "@Diffable should Conform to `Equatable` protocol"
         }
     }
 }

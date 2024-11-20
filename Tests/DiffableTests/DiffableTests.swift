@@ -38,10 +38,10 @@ final class DiffableTests: XCTestCase {
                         static let name = Difference(rawValue: 1 << 0)
                     }
                 
-                    public func findDiffBy(otherConfiguration configuration: Self) -> Difference {
+                    public func computeDifference(from other: Self) -> Difference {
                         var difference: Difference = []
                         var currentCopy: Self? = self
-                        var otherCopy: Self? = configuration
+                        var otherCopy: Self? = other
                 
                         if currentCopy?.name != otherCopy?.name {
                             difference.insert(.name)
@@ -88,10 +88,10 @@ final class DiffableTests: XCTestCase {
                         static let name = Difference(rawValue: 1 << 0)
                     }
                 
-                    public func findDiffBy(otherConfiguration configuration: Self) -> Difference {
+                    public func computeDifference(from other: Self) -> Difference {
                         var difference: Difference = []
                         var currentCopy: Self? = self
-                        var otherCopy: Self? = configuration
+                        var otherCopy: Self? = other
                 
                         if currentCopy?.name != otherCopy?.name {
                             difference.insert(.name)
@@ -138,10 +138,10 @@ final class DiffableTests: XCTestCase {
                         static let name7 = Difference(rawValue: 1 << 0)
                     }
                 
-                    public func findDiffBy(otherConfiguration configuration: Self) -> Difference {
+                    public func computeDifference(from other: Self) -> Difference {
                         var difference: Difference = []
                         var currentCopy: Self? = self
-                        var otherCopy: Self? = configuration
+                        var otherCopy: Self? = other
                 
                         if currentCopy?.name7 != otherCopy?.name7 {
                             difference.insert(.name7)
@@ -196,10 +196,10 @@ final class DiffableTests: XCTestCase {
                         static let name6 = Difference(rawValue: 1 << 0)
                     }
                 
-                    public func findDiffBy(otherConfiguration configuration: Self) -> Difference {
+                    public func computeDifference(from other: Self) -> Difference {
                         var difference: Difference = []
                         var currentCopy: Self? = self
-                        var otherCopy: Self? = configuration
+                        var otherCopy: Self? = other
                 
                         if currentCopy?.name6 != otherCopy?.name6 {
                             difference.insert(.name6)
@@ -248,13 +248,72 @@ final class DiffableTests: XCTestCase {
                         static let name6 = Difference(rawValue: 1 << 0)
                     }
                 
-                    public func findDiffBy(otherConfiguration configuration: Self) -> Difference {
+                    public func computeDifference(from other: Self) -> Difference {
                         var difference: Difference = []
                         var currentCopy: Self? = self
-                        var otherCopy: Self? = configuration
+                        var otherCopy: Self? = other
 
                         if currentCopy?.name6 != otherCopy?.name6 {
                             difference.insert(.name6)
+                        }
+                
+                        currentCopy = nil
+                        otherCopy = nil
+                        return difference
+                    }
+                }
+                """#,
+            macros: testMacros
+        )
+        
+        #else
+        throw XCTSkip("macros are only supported when running tests for the host platform")
+        #endif
+    }
+    
+    func testGenerateDifferecneClosue() throws {
+        #if canImport(DiffableMacros)
+        assertMacroExpansion(
+            #"""
+            @Diffable
+            public struct Config: Equatable {
+                
+                public var name6: String = {
+                    return "hello 6"
+                }()
+                public var wrongVariable: () -> Void
+            }
+            """#
+            ,
+            expandedSource:
+                #"""
+                public struct Config: Equatable {
+                    
+                    public var name6: String = {
+                        return "hello 6"
+                    }()
+                    public var wrongVariable: () -> Void
+                
+                    public struct Difference: OptionSet {
+                        public let rawValue: Int
+                        public init(rawValue: Int) {
+                            self.rawValue = rawValue
+                        }
+                        static let name6 = Difference(rawValue: 1 << 0)
+                        static let wrongVariable = Difference(rawValue: 1 << 1)
+                    }
+                
+                    public func computeDifference(from other: Self) -> Difference {
+                        var difference: Difference = []
+                        var currentCopy: Self? = self
+                        var otherCopy: Self? = other
+
+                        if currentCopy?.name6 != otherCopy?.name6 {
+                            difference.insert(.name6)
+                        }
+                
+                        if currentCopy?.wrongVariable != otherCopy?.wrongVariable {
+                            difference.insert(.wrongVariable)
                         }
                 
                         currentCopy = nil

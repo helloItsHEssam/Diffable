@@ -28,7 +28,7 @@ public struct DiffableMacro: MemberMacro {
         let validVarDecls = members
             .compactMap({ $0.decl.as(VariableDeclSyntax.self) })
             .removeComputedVariables() // remove computed
-            .removePrivateVariables() // remove private and valid private(set)
+            .removePrivateVariables() // remove private and private(set)
         
         let variableNames = validVarDecls
             .flatMap(\.bindings)
@@ -126,10 +126,10 @@ private extension String {
     
     static func generatePrefixDiffFunctionDeclaration() -> Self {
         """
-        func findDiffBy(otherConfiguration configuration: Self) -> Difference {
+        func computeDifference(from other: Self) -> Difference {
             var difference: Difference = []
             var currentCopy: Self? = self
-            var otherCopy: Self? = configuration
+            var otherCopy: Self? = other
         
         """
     }
