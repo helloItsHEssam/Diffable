@@ -19,7 +19,9 @@ extension InheritanceClauseSyntax? {
         
         let inheritedIdentifierTypes = self.inheritedTypes
             .compactMap { $0.type.as(IdentifierTypeSyntax.self) }
-        let identifierTypeSyntax = inheritedIdentifierTypes.compactMap { $0.as(IdentifierTypeSyntax.self) }
+        let identifierTypeSyntax = inheritedIdentifierTypes
+            .compactMap { Syntax($0) }
+            .compactMap { $0.as(IdentifierTypeSyntax.self) }
         if !identifierTypeSyntax.contains(where: { $0.name.text == "Equatable" }) {
             throw DiffableMacroError.shouldConformToEquatableProtocol
         }
@@ -31,6 +33,7 @@ extension [VariableDeclSyntax] {
     func removeComputedVariables() -> Self {
         return filter {
             let hasAccessorBlock = $0.bindings
+                .compactMap { Syntax($0) }
                 .compactMap { $0.as(PatternBindingSyntax.self) }
                 .filter { $0.accessorBlock == nil }
             return !hasAccessorBlock.isEmpty
@@ -40,6 +43,7 @@ extension [VariableDeclSyntax] {
     func removePrivateVariables() -> Self {
         return filter {
             let validDecls = $0.modifiers
+                .compactMap { Syntax($0) }
                 .compactMap { $0.as(DeclModifierSyntax.self) }
             
             guard !validDecls.isEmpty else {

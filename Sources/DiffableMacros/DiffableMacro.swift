@@ -92,7 +92,6 @@ private extension DeclGroupSyntax {
     
     func getModifierIfExists() -> String? {
         return modifiers
-            .compactMap { $0.as(DeclModifierSyntax.self) }
             .first?.name.text
     }
 }
