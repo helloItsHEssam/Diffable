@@ -74,7 +74,17 @@ The `DiffableMacroError` enum provides detailed error cases to help developers d
 - The type does not conform to Equatable, which is required for the macro to function.
 
 ## Contributing
-We welcome contributions! Feel free to submit a pull request or report an issue.
+We warmly welcome contributions to the BuildableMacro project! Whether you're fixing bugs, improving the documentation, or adding new features, your help is appreciated. Here’s how you can contribute:
+
+1. **Fork the Repository**: Start by forking the repository to your own GitHub account.
+2. **Create a Branch**: Make your changes in a new branch.
+3. **Make Your Changes**: Whether it's a new feature or a bug fix, your contributions make a difference.
+4. **Write Tests**: Ensure your changes are working as expected.
+5. **Submit a Pull Request**: Once you're satisfied, submit a pull request for review.
+
+To give clarity of what is expected of our members, we have adopted the code of conduct defined by the Contributor Covenant. This document is used across many open source communities. For more, see the [Code of Conduct](CODE_OF_CONDUCT.md).
+
+[![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](code_of_conduct.md)
 
 ## License
 
