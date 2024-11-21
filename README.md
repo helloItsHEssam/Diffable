@@ -12,7 +12,7 @@ The macro will generate an optimized implementation of difference computation fo
 
 When applied, the macro generates a computeDifference method that calculates the difference between two Config instances, returning a strongly-typed result indicating the changed properties.
 
-## Example Usage  
+## How to using  
 
 ```swift
 @Diffable
@@ -60,6 +60,106 @@ let configTwo = Config(name: "Alfred", id: UUID())
 
 let differences = configOne.computeDifference(from: configTwo)
 ```
+
+## Sample Using Diffable
+
+```swift
+/// A custom UIView that displays a person's name and age.
+/// This view uses a diffable configuration to detect and apply changes to its properties efficiently.
+final class PersonView: UIView {
+    
+    // MARK: - UI Elements
+    
+    /// Label to display the person's name.
+    private let nameLabel: UILabel = {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .headline)
+        return label
+    }()
+    
+    /// Label to display the person's age.
+    private let ageLabel: UILabel = {
+        let label = UILabel()
+        label.font = .preferredFont(forTextStyle: .subheadline)
+        return label
+    }()
+    
+    // MARK: - Properties
+    
+    /// The current configuration of the view.
+    private var configuration: Configuration
+    
+    // MARK: - Initializers
+    
+    /// Initializes the view with the given configuration.
+    ///
+    /// - Parameter configuration: The initial configuration of the view.
+    init(configuration: Configuration) {
+        self.configuration = configuration
+        super.init(frame: .zero)
+    }
+    
+    @available(*, unavailable, message: "init(frame:) is not supported. Use init(configuration:) instead.")
+    override init(frame: CGRect) {
+        fatalError("init(frame:) has not been implemented")
+    }
+    
+    @available(*, unavailable, message: "init(coder:) is not supported. Use init(configuration:) instead.")
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    // MARK: - Configuration Update
+    
+    /// Updates the view's configuration and applies changes to the UI.
+    ///
+    /// - Parameter configuration: The new configuration to apply.
+    func updateConfiguration(to configuration: Configuration) {
+        // Compute the differences between the old and new configurations.
+        let differences = self.configuration.computeDifference(from: configuration)
+        
+        // Iterate through potential differences and update the UI for changed properties.
+        for i in 0 ..< Int.bitWidth {
+            let bit = 1 << i
+            let difference = Configuration.Difference(rawValue: bit)
+            
+            if differences.contains(difference) {
+                switch difference {
+                case .age:
+                    // Update the age label if the age has changed.
+                    self.ageLabel.text = "\(configuration.age)"
+                    
+                case .name:
+                    // Update the name label if the name has changed.
+                    self.nameLabel.text = configuration.name
+                    
+                default:
+                    break
+                }
+            }
+        }
+        
+        // Update the stored configuration.
+        self.configuration = configuration
+    }
+    
+    // MARK: - Configuration Struct
+    
+    /// Represents the configuration of the `PersonView`.
+    /// This struct uses the `@Diffable` macro to enable efficient change detection.
+    @Diffable
+    struct Configuration: Equatable {
+        /// The person's name.
+        let name: String
+        /// The person's age.
+        let age: Int
+    }
+}
+```
+
+
+
+
 
 ## Error Handling
 
